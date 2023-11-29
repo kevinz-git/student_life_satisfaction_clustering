@@ -1,0 +1,411 @@
+---
+title: "ORLA 6541 Midterm Appendix"
+author: "Zhixing Zhou"
+date: "2023-11-27"
+output: html_document
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 
+
+```{r}
+
+
+
+
+#system setting
+options(scipen=999)
+#data wrangling
+library(dplyr)
+library(readr)
+library(haven)
+library(mice)
+#descrpitive visualization
+library(corrplot) 
+library(reshape2)
+library(ggplot2)
+#clustering visualization
+library(ComplexHeatmap)
+library(factoextra)
+library(hopach)
+
+#Read Data
+#----
+#load data
+# rm(dta0)
+# rm(dta1)
+# save.image(file = "change.RData")
+setwd("D:/研究生/")
+load("change.RData")
+#-----
+
+# read in world bank data 
+dta0<- read_csv("D:/研究生/CY07_MSU_STU_QQQ.csv")
+#calculate data
+#dta00<- read_sav(file.path("D:/","研究生","CY07_MSU_STU_QQQ.sav"))
+dta0<- read_csv("D:/研究生/CY07_MSU_STU_QQQ.csv")
+ dta1<- as.data.frame(dta0) %>% filter(CNT=="ARE" | CNT=="BGR" |  CNT == "ESP"| CNT == "GEO" | CNT == "HKG" | CNT == "IRL" | CNT == "MEX" | CNT == "PAN"| CNT == "SRB"  )
+ 
+
+ dta2<- dta1 %>% select(c(CNTSTUID,WB150Q01HA:WB178Q07HA,WB032Q01NA,WB032Q02NA))
+
+
+ 
+# rm(dta10)
+ # dta10<-  as.data.frame(dta0) %>% filter(is.na(WB178Q01HA)==FALSE)
+ # table(dta10$CNT)
+# We chose a series of indicators that could represent the subjective well-being. We also chose other indicators that are theoretically related to subjective well being.
+# We want to see what dimensions of children's well-being are more related to each other. And then study on certain aspect of the children's well-being.
+
+#Quality of Life
+ 
+  #As a whole
+    #Life evaluation and life satisfaction
+      #Subjectively: WB155 How satisfied are you with each of the following?
+      # I add up all answers from 01 to 05 as 5 to 1. The higher the more overall satisfied.
+ dta31<-dta2
+ dta31<- as_tibble(dta31) %>% mutate_at(vars(WB155Q01HA:WB155Q10HA),
+                                        dplyr::recode,
+                                        '1'=1,'2'=2,'3'=3,'4'=4,'5'=NA_real_,'7'=-999,'9'=NA_real_) 
+ 
+ dta31[,c((which(colnames(dta31)=="WB155Q01HA")):(which(colnames(dta31)=="WB155Q10HA")))] <- complete(mice(select(dta31,WB155Q01HA:WB155Q10HA)), method = "cart")
+ 
+ dta31 <- dta31%>% mutate(lifesatisfy = WB155Q01HA  + WB155Q02HA + WB155Q03HA +WB155Q04HA+WB155Q05HA + WB155Q06HA  + WB155Q07HA + WB155Q08HA +WB155Q09HA+WB155Q10HA)
+ 
+ 
+ 
+    #Emotional Well-being
+ 
+  #Self-Related Well-being
+    #Health
+      # the students' health is objectively represented by BMI, last time evaluate weight, and last time evaluate height
+      # subjective, physical: WB153 Thinking about yourself, how much do you agree with each of the following statements?
+      # I regard 05 as 0, then add up all answers from 01 to 04 as 1 to 4.  The higher the healthier. For NA, I imputed by CART method.
+ #WB153 subjective, physical, health
+
+ dta31<- as_tibble(dta31) %>% mutate_at(vars(WB153Q01HA:WB153Q05HA),
+                                        dplyr::recode,
+                                        '1'=1,'2'=2,'3'=3,'4'=4,'5'=NA_real_,'97'=-999,'99'=NA_real_) 
+ 
+ dta31[,c((which(colnames(dta31)=="WB153Q01HA")):(which(colnames(dta31)=="WB153Q05HA")))] <- complete(mice(select(dta31,WB153Q01HA:WB153Q05HA)), method = "cart")
+ 
+ dta31 <- dta31%>% mutate(subphyshealth = WB153Q01HA  + WB153Q02HA + WB153Q03HA +WB153Q04HA+WB153Q05HA)
+ 
+
+
+ # # # method = "pmm", method = "lasso.norm"
+ # # table(dta2$WB153Q01HA)
+ # # table(dta31$WB153Q01HA)
+ # titanic_numeric <- titanic_train %>%
+ #   select(Survived, Pclass, SibSp, Parch, Age)
+ # mice_imputed <- data.frame(
+ #   original = titanic_train$Age,
+ #   imputed_pmm = complete(mice(titanic_numeric, method = "pmm"))$Age,
+ #   imputed_cart = complete(mice(titanic_numeric, method = "cart"))$Age,
+ #   imputed_lasso = complete(mice(titanic_numeric, method = "lasso.norm"))$Age
+ # )
+ # mice_imputed
+ # md.pattern(titanic_numeric)
+   
+   
+ # dta32<- dta31 %>% 
+ #   filter(if_any(WB153Q01HA:WB153Q05HA,is.na)) 
+
+# dplyr::recode(as.vector(dta2$WB153Q01HA),'1'=1)
+# vars(dta2$WB153Q01HA:dta2$WB153Q05HA)
+#  ?recode
+
+      # subjective, mental: WB154 In the past six months, how often have you had the following?
+      # # I add up all answers from 01 to 05 as 5 to 1. The higher the healthier.
+ #WB154 subjective, mental, health
+ dta31<- as_tibble(dta31) %>% mutate_at(vars(WB154Q01HA:WB154Q09HA),
+                                        dplyr::recode,
+                                        '1'=5,'2'=4,'3'=3,'4'=2,'5'=1,'97'=-999,'99'=NA_real_) 
+ 
+ dta31[,c((which(colnames(dta31)=="WB154Q01HA")):(which(colnames(dta31)=="WB154Q09HA")))] <- complete(mice(select(dta31,WB154Q01HA:WB154Q09HA)), method = "cart")
+ 
+ dta31 <- dta31%>% mutate(submenthealth = WB154Q01HA  + WB154Q02HA + WB154Q03HA +WB154Q04HA+WB154Q05HA+WB154Q06HA  + WB154Q07HA + WB154Q08HA +WB154Q09HA)
+
+    #education and skills
+      #is objectively represented by cognitive assessment
+    #psychological functioning 
+ 
+  #School-related well-being
+    #Social Connections at school
+    #Schoolwork
+    #Other potential indicators
+ 
+#Well-being outside of school
+  #social connections outside of school
+  #material living conditions ( by famliy's SES, or other indicators, and subjective indicators)
+  #Leisure Time
+  #Other Potential Indicators
+#Possible Composite Indicators
+
+dta32<-dta31
+dta32 <- dta32 %>% select("WB151Q01HA","WB152Q01HA","WB156Q01HA","WB158Q01HA","WB164Q01HA","WB165Q01HA","WB167Q01HA","WB176Q01HA","WB032Q01NA","WB032Q02NA","WB031Q01NA","submenthealth","subphyshealth","lifesatisfy")
+
+dta32<- as_tibble(dta32) %>% mutate_at(c("WB151Q01HA","WB152Q01HA","WB156Q01HA"),                           dplyr::recode,
+                                       '99997'=-999,'99998'=NA_real_,'99999'=NA_real_)
+dta32<- as_tibble(dta32) %>% mutate_at(c("WB158Q01HA","WB032Q01NA","WB032Q02NA","WB031Q01NA","WB176Q01HA"),                            dplyr::recode,
+                                       '97'=-999,'98'=NA_real_,'99'=NA_real_)
+dta32<- as_tibble(dta32) %>% mutate_at(c("WB164Q01HA","WB165Q01HA","WB167Q01HA"),                           dplyr::recode,
+                                       '7'=-999,'8'=NA_real_,'9'=NA_real_)
+
+dta32 <- dta32 %>%　rename((c(weight="WB151Q01HA",tall="WB152Q01HA",friends="WB156Q01HA",friendsaftersch="WB158Q01HA",worrymoney="WB164Q01HA",attendmath="WB165Q01HA",attendlang="WB167Q01HA",studied="WB176Q01HA",moderatephys="WB032Q01NA",vigorousphys="WB032Q02NA",schlphys="WB031Q01NA")))
+
+
+
+dta33<-dta31
+dta33 <- dta33 %>% select("CNTSTUID","WB151Q01HA","WB152Q01HA","WB156Q01HA","WB158Q01HA","WB164Q01HA","WB165Q01HA","WB167Q01HA","WB176Q01HA","WB032Q01NA","WB032Q02NA","WB031Q01NA","submenthealth","subphyshealth","lifesatisfy")
+dta33<- as_tibble(dta33) %>% mutate_at(c("WB151Q01HA","WB152Q01HA","WB156Q01HA"),                           dplyr::recode,
+                                       '99997'=-999,'99998'=NA_real_,'99999'=NA_real_)
+dta33<- as_tibble(dta33) %>% mutate_at(c("WB158Q01HA","WB032Q01NA","WB032Q02NA","WB031Q01NA","WB176Q01HA"),                            dplyr::recode,
+                                       '97'=-999,'98'=NA_real_,'99'=NA_real_)
+dta33<- as_tibble(dta33) %>% mutate_at(c("WB164Q01HA","WB165Q01HA","WB167Q01HA"),                           dplyr::recode,
+                                       '7'=-999,'8'=NA_real_,'9'=NA_real_)
+
+dta33 <- dta33 %>%　rename((c(weight="WB151Q01HA",tall="WB152Q01HA",friends="WB156Q01HA",friendsaftersch="WB158Q01HA",worrymoney="WB164Q01HA",attendmath="WB165Q01HA",attendlang="WB167Q01HA",studied="WB176Q01HA",moderatephys="WB032Q01NA",vigorousphys="WB032Q02NA",schlphys="WB031Q01NA")))
+#as.data.frame(t(sapply(dta32, summary)))
+# Do summary statistics for variables
+
+Mean<-mapply(mean,dta32,na.rm=TRUE)
+Std.Deviation<-mapply(sd,dta32,na.rm=TRUE)
+Min<-mapply(min,dta32,na.rm=TRUE)
+Max<-mapply(max,dta32,na.rm=TRUE)
+n<- mapply(function(x){
+  sum(!is.na(x))}, dta32) 
+stat<-data.frame(n,Mean, Min, Max,Std.Deviation)
+stat<- stat %>% mutate(Var=Std.Deviation^2,NAs= nrow(dta32)-n)
+
+
+#summary(dta32)
+# dta32 %>% 
+#   summarize(mean = mean, min = min, max = max, n = n())
+# ?summarize
+# dta32 %>%
+#   summarise_at(vars(colnames(dta32)), list(Mean = mean, SD = sd))  
+dta40 <-dta32
+dta40[,c((which(colnames(dta40)=="weight")):(which(colnames(dta40)=="schlphys")))] <- complete(mice(select(dta40,weight:schlphys)), method = "cart")
+#%>% as.data.frame()
+cormatrix<- dta40 %>%  cor() 
+cormatrix
+
+title <- "Student Well-being Correlation Heatmap"
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(cor(dta40), method = "color", col = col(200),
+         type = "upper", order="original", number.cex = 0.8,
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "black", tl.srt = 45,
+         number.digits = 2,
+         # Text label color and rotation
+         # hide correlation coefficient on the principal diagonal
+         diag = FALSE, title=title,
+         #title = "Intraday Correlation LX0088U09A3",
+         mar=c(0,0,1,0))
+
+
+#alluvial plot
+##submenthealth
+# dta50 <- dta00 %>% filter(CNT=="ARE" | CNT=="BGR" |  CNT == "ESP"| CNT == "GEO" | CNT == "HKG" | CNT == "IRL" | CNT == "MEX" | CNT == "PAN"| CNT == "SRB"  ) %>% 
+#   select(c(CNTSTUID,WB150Q01HA:WB178Q07HA,WB032Q01NA,WB032Q02NA))
+# dta51 <- dta00 %>% filter(CNT=="ARE" | CNT=="BGR" |  CNT == "ESP"| CNT == "GEO" | CNT == "HKG" | CNT == "IRL" | CNT == "MEX" | CNT == "PAN"| CNT == "SRB"  ) %>% 
+#   select(c(CNTSTUID,WB150Q01HA:WB178Q07HA,WB032Q01NA,WB032Q02NA)) %>% 
+#   select("WB151Q01HA","WB152Q01HA","WB156Q01HA","WB158Q01HA","WB164Q01HA","WB165Q01HA","WB167Q01HA","WB176Q01HA","WB032Q01NA","WB032Q02NA","WB031Q01NA") %>%　
+#   rename((c(weight="WB151Q01HA",tall="WB152Q01HA",friends="WB156Q01HA",friendsaftersch="WB158Q01HA",worrymoney="WB164Q01HA",attendmath="WB165Q01HA",attendlang="WB167Q01HA",studied="WB176Q01HA",moderatephys="WB032Q01NA",vigorousphys="WB032Q02NA",schlphys="WB031Q01NA")))
+
+
+# dta_alluvial <- dta50 %>% 
+#   group_by(WB164Q01HA,WB155Q06HA) %>%
+#   summarise(Freq=n())
+
+# dta_alluvial <-  as_tibble(dta40) %>% 
+#   mutate_at(c("worrymoney"),                           dplyr::recode, '1'="Never Worries",'2'='Sometimes Worries','3'="Often Worries",'4'='Always Worries')  %>% 
+#   group_by(lifesatisfy,worrymoney) %>% 
+#   summarise(Freq=n())  %>% replace(is.na(.), "NA")  
+
+dta_alluvial3 <-  as_tibble(dta2) %>% 
+  mutate_at(c("WB164Q01HA","WB155Q06HA"),                           dplyr::recode, '7'=-999,'8'=NA_real_,'9'=NA_real_) %>% 
+  mutate_at(c("WB155Q06HA"),                           dplyr::recode, '1'="Not at all satisfied",'2'='Not satisfied','3'="Satisfied",'4'='Totally Satisfied')%>% 
+  mutate_at(c("WB164Q01HA"),                           dplyr::recode, '1'="Never Worries",'2'='Sometimes Worries','3'="Often Worries",'4'='Always Worries')  %>% 
+  group_by(WB164Q01HA,WB155Q06HA) %>% 
+  summarise(Freq=n())  %>% replace(is.na(.), "NA")  
+#dta_alluvial3[, 1:2] <- sapply(dta_alluvial3[, 1:2], as.character)
+# library(data.table)
+# dta50<- 
+# dta_alluvial2 <-dta50[,
+#                      .(Freq = .N),
+#                      by = c("WB155Q06HA", "WB164Q01HA")
+# ]
+# # [,
+#   ST119Q01NA := factor(base::ifelse(is.na(ST119Q01NA), "Missing", ST119Q01NA),levels=c("Strongly disagree", "Disagree", "Agree","Strongly agree", "Missing"))]
+
+
+library(ggalluvial)
+library(RColorBrewer)
+ggplot(data = dta_alluvial3,
+       aes(axis1 = WB164Q01HA, axis2 =  WB155Q06HA, y = Freq)) +
+  scale_x_discrete(limits = c("Worries on family wealth ", "Life satisfaction on things you have"),
+                   expand = c(.1, .05)) +
+  ggalluvial::geom_alluvium(aes(fill= WB155Q06HA)) +
+  geom_stratum() +
+  geom_text(aes(label = after_stat(stratum)), stat = "stratum")+
+  labs( title="Alluvial Plot of Worries on family wealth and Life Satisfaction on things you have",y = "Frequency", fill = "Life Satisfaction on things you have") +  scale_fill_manual(values = c("NA"= "grey90", "Not at all satisfied" = "salmon1",'Not satisfied' = "pink1","Satisfied" = "skyblue",'Totally Satisfied'="lightgreen"))+ 
+  theme_bw() 
+
+
+
+ggplot(data = dta_alluvial3,
+       aes(axis1 = WB164Q01HA, axis2 =  WB155Q06HA, y = Freq)) +
+  scale_x_discrete(limits = c("Worries on family wealth ", "Life satisfaction on things you have"),
+                   expand = c(.1, .05)) +
+  ggalluvial::geom_alluvium(aes(fill= WB164Q01HA)) +
+  geom_stratum() +
+  geom_text(aes(label = after_stat(stratum)), stat = "stratum")+
+  labs( title="Alluvial Plot of Worries on family wealth and Life Satisfaction on things you have",y = "Frequency", fill = "Life Satisfaction on things you have") +  scale_fill_brewer(type = "qual", palette = "Set3")+
+  theme_bw()
+
+# bubble plot
+# with country and sample size of the country, show student life satisfaction and gdp
+
+dta1cnt<-dta1%>%select(CNT,CNTSTUID)
+dta_bubble<- dta33 %>% left_join(dta1cnt,by=join_by(CNTSTUID))
+gnpcap<- read_csv("D:/研究生/API_NY.GNP.PCAP.CD_DS2_en_csv_v2_5995153.csv",skip=4,col_types="c")
+gnpcap<- gnpcap %>% select("Country Code","2018") 
+dta_bubble <- dta_bubble %>% left_join(gnpcap, by=join_by(CNT=="Country Code")) %>% rename("gnpcap"="2018") %>% mutate(incomelev=case_when(
+  gnpcap< 996 ~ "low-income",
+  (996<gnpcap & gnpcap< 3895)  ~"lower-middle income",
+  (3895<gnpcap & gnpcap< 12055)  ~"upper-middle income",
+  gnpcap > 12055 ~"high-income",
+))
+dta_bubble$CNTname<- case_match(dta_bubble$CNT,                    "ARE"~"United Arab Emirates","BGR"~"Bulgaria","ESP"~"Spain","GEO"~"Georgia","HKG"~"Hong Kong","IRL"~"Ireland","MEX"~"Mexico","PAN"~"Panama","SRB"~"Serbia")
+
+dta_bubble_summary<- dta_bubble%>% subset(select=-CNTSTUID) %>% group_by(CNT) %>%summarise(across(where(is.numeric),  \(x) mean(x, na.rm = TRUE)), n = n()) %>% mutate(incomelev=case_when(
+  gnpcap< 996 ~ "low-income",
+  (996<gnpcap & gnpcap< 3895)  ~"lower-middle income",
+  (3895<gnpcap & gnpcap< 12055)  ~"upper-middle income",
+  gnpcap > 12055 ~"high-income",
+)) 
+dta_bubble_summary$CNTname<- case_match(dta_bubble_summary$CNT,                    "ARE"~"United Arab Emirates","BGR"~"Bulgaria","ESP"~"Spain","GEO"~"Georgia","HKG"~"Hong Kong","IRL"~"Ireland","MEX"~"Mexico","PAN"~"Panama","SRB"~"Serbia")
+dta_bubble_summary$n<-as.numeric(dta_bubble_summary$n)
+
+Mean2<-mapply(mean,dta_bubble_summary,na.rm=TRUE)
+Std.Deviation2<-mapply(sd,dta_bubble_summary,na.rm=TRUE)
+Min2<-mapply(min,dta_bubble_summary,na.rm=TRUE)
+Max2<-mapply(max,dta_bubble_summary,na.rm=TRUE)
+n2<- mapply(function(x){
+  sum(!is.na(x))}, dta_bubble_summary) 
+stat2<-data.frame(n2,Mean2, Min2, Max2,Std.Deviation2)
+stat2<- stat2 %>% mutate(Var=Std.Deviation2^2,NAs= nrow(dta_bubble_summary)-n2)
+
+ggplot(dta_bubble_summary,aes(x=gnpcap, y=lifesatisfy, size=n, color=incomelev)) +
+  geom_point(alpha=0.8)+
+  geom_text(label = dta_bubble_summary$CNTname, nudge_y=0.6,size=4,color = "black")+
+scale_size(range = c(1.4, 20), name="Sample Size")+
+  labs( title="Bubble Plot of GNI per capita and Student Life Satisfaction",x="GNI Per Capita (USD, 2018)",y = "Student Life Satisfaction", color = "Countries' Income Level")+scale_color_manual(values = c("high-income"="skyblue","upper-middle income"="orange")) +coord_cartesian(ylim=c(25,35))
+
+#categorical boxplot with distribution
+
+library(gridExtra)
+dta_bubble1 <- dta_bubble %>% mutate(submenthealth=as.factor(submenthealth),subphyshealth=as.factor(subphyshealth))
+
+palette1 <- colorRampPalette(RColorBrewer::brewer.pal(9,name = 'Greens'))(length(unique(dta_bubble$submenthealth)))
+
+
+plot1a<- ggplot(data=dta_bubble1, mapping=aes(x=submenthealth, y=lifesatisfy,fill=submenthealth,group=submenthealth))+geom_boxplot(fill=palette1) + theme_classic()+
+  labs( title="Boxplot of Subjective Mental Health and Life Satisfication",x="Subjective Mental Health",y = "Student Life Satisfaction")
+#plot1a
+
+plot1b<- ggplot(data=dta_bubble1, mapping=aes(x=submenthealth, y=lifesatisfy,fill=submenthealth,group=submenthealth))+geom_violin() +scale_fill_manual(values=palette1) +theme_classic()+theme(legend.position="none")+
+  labs( title="Violin Plot of Subjective Mental Health and Life Satisfication",x="Subjective Mental Health",y = "Student Life Satisfaction")
+#plot1b
+# group=submenthealth,
+palette2 <- colorRampPalette(RColorBrewer::brewer.pal(9,name = 'Blues'))(length(unique(dta_bubble$subphyshealth)))
+plot2a <- ggplot(data=dta_bubble1, mapping=aes(x=subphyshealth, y=lifesatisfy,group=subphyshealth,fill=subphyshealth)) + geom_boxplot(fill=palette2) + theme_classic()+
+  labs( title="Boxplot of Subjective Physical health and Life Satisfication",x="Subjective Physical health",y = "Student Life Satisfaction")
+#plot2a
+plot2b <- ggplot(data=dta_bubble1, mapping=aes(x=subphyshealth, y=lifesatisfy,group=subphyshealth,fill=subphyshealth)) + geom_violin() + theme_classic()+theme(legend.position="none")+scale_fill_manual(values=palette2)+
+  labs( title="Violin Plot of Subjective Physical health and Life Satisfication",x="Subjective Physical health",y = "Student Life Satisfaction")
+#plot2b
+#,group=subphyshealth,
+grid.arrange(plot1a, plot2a, ncol=2)
+grid.arrange(plot1b, plot2b, ncol=2)
+
+
+plot1c<- ggplot(data=dta_bubble1, mapping=aes(x=submenthealth, y=lifesatisfy,fill=submenthealth,group=submenthealth))+geom_violin() +scale_fill_manual(values=palette1)+geom_boxplot(fill=palette1,alpha=0.3)+ theme_classic()+theme(legend.position="none")+
+  labs( title="Violin and Boxplot of Subjective Mental Health \nand Life Satisfication",x="Subjective Mental Health",y = "Student Life Satisfaction")
+#plot1c
+plot2c<- ggplot(data=dta_bubble1, mapping=aes(x=subphyshealth, y=lifesatisfy,group=subphyshealth,fill=subphyshealth)) + geom_violin() +scale_fill_manual(values=palette2)+geom_boxplot(fill=palette2,alpha=0.3)+ theme_classic()+theme(legend.position="none")+
+  labs( title="Violin and Boxplot of Subjective Physical health \n and Life Satisfication",x="Subjective Physical health",y = "Student Life Satisfaction")
+#plot2c
+grid.arrange(plot1c, plot2c, ncol=2)
+
+# Make the cluster heatmap 
+
+#install.packages("magick")
+library(magick)
+dta4 <- scale(dta40)
+#dta41<- dta4[sample(nrow(dta4), 10000), ]
+dta41<- dta4[sample(nrow(dta4), 30000), ]
+#start_time <- Sys.time()
+#Heatmap(dta4, use_raster=TRUE,column_split = 4,name = "Cluster Heatmap by \n Uncentered Correlation Clustering,\n With full Sample",column_title="Variables related to life staisfication",row_title="15 year old students",cluster_rows = FALSE)
+#end_time <- Sys.time()
+#end_time - start_time
+#uncenterred cluster heatmap
+.boxplot = anno_boxplot(dta41, which = "column")
+ha_mix_top = HeatmapAnnotation(BoxPlot = .boxplot,
+                               height = unit(2, "cm"))
+uncenter.dist<-function(m) {
+  as.dist(as.matrix(distancematrix(m, d="cosangle")))
+}
+row.clus<-hclust(uncenter.dist(dta41), method = "ave")
+col.clus<-hclust(uncenter.dist(t(dta41)), method = "ave")
+start_time <- Sys.time()
+Heatmap(dta41, name = "Cluster Heatmap by \n Uncentered Correlation Clustering,\n With 30000 Sample",column_title="Variables related to life staisfication",row_title="15 year old students", use_raster=TRUE,row_split = 4,column_split = 4, border = FALSE,
+        cluster_rows=row.clus, cluster_columns=col.clus, top_annotation=ha_mix_top)
+end_time <- Sys.time()
+end_time - start_time
+
+
+#dta4 <- as.data.frame(dta4)
+
+#determine hyperparameters
+# dta41<-dta4[sample(nrow(dta4), 1000),]
+dta41<- dta4[sample(nrow(dta4), 10000), ]
+
+.boxplot = anno_boxplot(dta41, which = "column")
+ha_mix_top = HeatmapAnnotation(BoxPlot = .boxplot,
+                               height = unit(2, "cm"))
+uncenter.dist<-function(m) {
+  as.dist(as.matrix(distancematrix(m, d="cosangle")))
+}
+row.clus<-hclust(uncenter.dist(dta41), method = "ave")
+col.clus<-hclust(uncenter.dist(t(dta41)), method = "ave")
+start_time <- Sys.time()
+Heatmap(dta41, name = "Cluster Heatmap by \n Uncentered Correlation Clustering,\n With 30000 Sample",column_title="Variables related to life staisfication",row_title="15 year old students", use_raster=TRUE,row_split = 4,column_split = 4, border = FALSE,
+        cluster_rows=row.clus, cluster_columns=col.clus, top_annotation=ha_mix_top)
+end_time <- Sys.time()
+end_time - start_time
+
+fviz_nbclust(dta41,kmeans,method="wss")
+#draw k-means cluster heatmap
+.boxplot = anno_boxplot(dta41, which = "column")
+ha_mix_top = HeatmapAnnotation(BoxPlot = .boxplot,
+                               height = unit(2, "cm"))
+start_time <- Sys.time()
+Heatmap(dta4,
+        name = "cluster heatmap\n by k-means\n clustering algorithm",
+        row_km = 4, 
+        row_km_repeats = 25,
+        column_km = 4,
+        column_km_repeats = 25,
+        clustering_distance_rows = 
+          "euclidean", top_annotation=ha_mix_top)
+end_time <- Sys.time()
+end_time - start_time
+  
+  
+```
